@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Icon from '@/components/ui/icon';
+import AuthDialog from '@/components/AuthDialog';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,45 +21,107 @@ const Index = () => {
     personality: '',
     greeting: ''
   });
+  const [user, setUser] = useState(null);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const [characters, setCharacters] = useState([]);
 
-  const popularCharacters = [
-    {
-      id: 1,
-      name: 'Алекс',
-      description: 'Дружелюбный AI-ассистент для программирования',
-      avatar: '/img/bd63c0b7-440f-4239-9e56-df94bf115aae.jpg',
-      category: 'Технологии',
-      chats: 12500,
-      rating: 4.9
-    },
-    {
-      id: 2,
-      name: 'Ева',
-      description: 'Креативный помощник для дизайна и искусства',
-      avatar: '/img/27cfc4cc-f473-455c-b6af-7eb4c9717bad.jpg',
-      category: 'Творчество',
-      chats: 8900,
-      rating: 4.8
-    },
-    {
-      id: 3,
-      name: 'Мудрец',
-      description: 'Философ и наставник для жизненных вопросов',
-      avatar: '/img/b33b0939-95b8-4e5d-a7e9-a5ddf6640bf8.jpg',
-      category: 'Философия',
-      chats: 15600,
-      rating: 4.9
-    }
-  ];
+  useEffect(() => {
+    // Load characters from database or API
+    const loadCharacters = async () => {
+      // Mock data for now - replace with actual API call
+      const mockCharacters = [
+        {
+          id: 1,
+          name: 'Алекс',
+          description: 'Дружелюбный AI-ассистент для программирования',
+          avatar: '/img/bd63c0b7-440f-4239-9e56-df94bf115aae.jpg',
+          category: 'Технологии',
+          chats: 12500,
+          rating: 4.9,
+          isPremium: false
+        },
+        {
+          id: 2,
+          name: 'Ева',
+          description: 'Креативный помощник для дизайна и искусства',
+          avatar: '/img/27cfc4cc-f473-455c-b6af-7eb4c9717bad.jpg',
+          category: 'Творчество',
+          chats: 8900,
+          rating: 4.8,
+          isPremium: false
+        },
+        {
+          id: 3,
+          name: 'Мудрец',
+          description: 'Философ и наставник для жизненных вопросов',
+          avatar: '/img/b33b0939-95b8-4e5d-a7e9-a5ddf6640bf8.jpg',
+          category: 'Философия',
+          chats: 15600,
+          rating: 4.9,
+          isPremium: true
+        },
+        {
+          id: 4,
+          name: 'Лингвист',
+          description: 'Эксперт по изучению иностранных языков',
+          avatar: '/img/bd63c0b7-440f-4239-9e56-df94bf115aae.jpg',
+          category: 'Образование',
+          chats: 7200,
+          rating: 4.7,
+          isPremium: true
+        },
+        {
+          id: 5,
+          name: 'Коуч',
+          description: 'Персональный тренер по достижению целей',
+          avatar: '/img/27cfc4cc-f473-455c-b6af-7eb4c9717bad.jpg',
+          category: 'Развитие',
+          chats: 9800,
+          rating: 4.8,
+          isPremium: true
+        }
+      ];
+      setCharacters(mockCharacters);
+    };
+    loadCharacters();
+  }, []);
 
   const categories = ['Все', 'Технологии', 'Творчество', 'Философия', 'Образование', 'Развлечения'];
   const [selectedCategory, setSelectedCategory] = useState('Все');
 
-  const filteredCharacters = popularCharacters.filter(char => 
+  const filteredCharacters = characters.filter(char => 
     (selectedCategory === 'Все' || char.category === selectedCategory) &&
     (char.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
      char.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const handleAuthSuccess = (userData) => {
+    setUser(userData);
+    setShowAuthDialog(false);
+  };
+
+  const handleSubscribe = (plan) => {
+    if (user) {
+      setUser({...user, subscriptionType: plan});
+      setShowSubscriptionDialog(false);
+    }
+  };
+
+  const handleChatClick = (character) => {
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+    
+    if (character.isPremium && user.subscriptionType === 'free') {
+      setShowSubscriptionDialog(true);
+      return;
+    }
+    
+    // Start chat
+    console.log('Starting chat with', character.name);
+  };
 
   const handleCreateCharacter = () => {
     console.log('Создание персонажа:', newCharacter);
@@ -89,65 +155,120 @@ const Index = () => {
               <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                 Мои персонажи
               </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="tech-gradient hover:opacity-90">
-                    <Icon name="Plus" size={16} className="mr-2" />
-                    Создать персонажа
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md glass-effect border-white/20">
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">Создать AI-персонажа</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Имя персонажа</Label>
-                      <Input
-                        id="name"
-                        value={newCharacter.name}
-                        onChange={(e) => setNewCharacter({...newCharacter, name: e.target.value})}
-                        placeholder="Введите имя..."
-                        className="bg-white/5 border-white/20"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Описание</Label>
-                      <Input
-                        id="description"
-                        value={newCharacter.description}
-                        onChange={(e) => setNewCharacter({...newCharacter, description: e.target.value})}
-                        placeholder="Краткое описание персонажа..."
-                        className="bg-white/5 border-white/20"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="personality">Личность</Label>
-                      <Textarea
-                        id="personality"
-                        value={newCharacter.personality}
-                        onChange={(e) => setNewCharacter({...newCharacter, personality: e.target.value})}
-                        placeholder="Опишите характер и особенности..."
-                        className="bg-white/5 border-white/20"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="greeting">Приветствие</Label>
-                      <Input
-                        id="greeting"
-                        value={newCharacter.greeting}
-                        onChange={(e) => setNewCharacter({...newCharacter, greeting: e.target.value})}
-                        placeholder="Первое сообщение от персонажа..."
-                        className="bg-white/5 border-white/20"
-                      />
-                    </div>
-                    <Button onClick={handleCreateCharacter} className="w-full tech-gradient">
-                      Создать персонажа
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              
+              {user ? (
+                <>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="tech-gradient hover:opacity-90">
+                        <Icon name="Plus" size={16} className="mr-2" />
+                        Создать персонажа
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md glass-effect border-white/20">
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground">Создать AI-персонажа</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="name">Имя персонажа</Label>
+                          <Input
+                            id="name"
+                            value={newCharacter.name}
+                            onChange={(e) => setNewCharacter({...newCharacter, name: e.target.value})}
+                            placeholder="Введите имя..."
+                            className="bg-white/5 border-white/20"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="description">Описание</Label>
+                          <Input
+                            id="description"
+                            value={newCharacter.description}
+                            onChange={(e) => setNewCharacter({...newCharacter, description: e.target.value})}
+                            placeholder="Краткое описание персонажа..."
+                            className="bg-white/5 border-white/20"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="personality">Личность</Label>
+                          <Textarea
+                            id="personality"
+                            value={newCharacter.personality}
+                            onChange={(e) => setNewCharacter({...newCharacter, personality: e.target.value})}
+                            placeholder="Опишите характер и особенности..."
+                            className="bg-white/5 border-white/20"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="greeting">Приветствие</Label>
+                          <Input
+                            id="greeting"
+                            value={newCharacter.greeting}
+                            onChange={(e) => setNewCharacter({...newCharacter, greeting: e.target.value})}
+                            placeholder="Первое сообщение от персонажа..."
+                            className="bg-white/5 border-white/20"
+                          />
+                        </div>
+                        <Button onClick={handleCreateCharacter} className="w-full tech-gradient">
+                          Создать персонажа
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatarUrl} alt={user.username} />
+                          <AvatarFallback>{user.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56 glass-effect border-white/20" align="end" forceMount>
+                      <div className="flex flex-col space-y-1 p-2">
+                        <p className="text-sm font-medium leading-none text-foreground">{user.fullName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        <div className="flex items-center space-x-2 pt-2">
+                          <Badge variant={user.subscriptionType === 'free' ? 'secondary' : 'default'} className="text-xs">
+                            {user.subscriptionType === 'free' ? 'Бесплатно' : 
+                             user.subscriptionType === 'premium' ? 'Премиум' : 'Про'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {user.credits} кредитов
+                          </span>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator className="bg-white/20" />
+                      <DropdownMenuItem 
+                        onClick={() => setShowSubscriptionDialog(true)}
+                        className="text-foreground hover:bg-white/10"
+                      >
+                        <Icon name="Crown" className="mr-2 h-4 w-4" />
+                        Подписка
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-foreground hover:bg-white/10">
+                        <Icon name="Settings" className="mr-2 h-4 w-4" />
+                        Настройки
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-white/20" />
+                      <DropdownMenuItem 
+                        onClick={() => setUser(null)}
+                        className="text-foreground hover:bg-white/10"
+                      >
+                        <Icon name="LogOut" className="mr-2 h-4 w-4" />
+                        Выйти
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <Button onClick={() => setShowAuthDialog(true)} className="tech-gradient">
+                  Войти
+                </Button>
+              )}
             </nav>
           </div>
         </div>
@@ -238,9 +359,15 @@ const Index = () => {
                       </div>
                     </div>
                     
-                    <Button className="w-full tech-gradient group-hover:shadow-lg transition-all">
+                    <Button 
+                      onClick={() => handleChatClick(character)}
+                      className="w-full tech-gradient group-hover:shadow-lg transition-all relative"
+                    >
                       <Icon name="MessageCircle" size={16} className="mr-2" />
                       Начать чат
+                      {character.isPremium && (
+                        <Icon name="Crown" size={14} className="ml-2 text-yellow-400" />
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
@@ -262,6 +389,19 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <AuthDialog 
+        open={showAuthDialog} 
+        onOpenChange={setShowAuthDialog}
+        onAuthSuccess={handleAuthSuccess}
+      />
+      
+      <SubscriptionDialog 
+        open={showSubscriptionDialog}
+        onOpenChange={setShowSubscriptionDialog}
+        currentPlan={user?.subscriptionType || 'free'}
+        onSubscribe={handleSubscribe}
+      />
     </div>
   );
 };
